@@ -6,6 +6,15 @@ import org.datavec.spark.transform.model.Base64NDArrayBody;
 import org.datavec.spark.transform.model.BatchImageRecord;
 import org.datavec.spark.transform.model.SingleImageRecord;
 
+import ai.skymind.skil.examples.mnist.modelserver.inference.model.TransformedImage;
+
+/*
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.ObjectMapper;
+import com.mashape.unirest.http.Unirest;
+import org.apache.commons.io.FileUtils;
+import org.datavec.api.util.ClassPathResource;
+*/
 
 //import ai.skymind.cdg.api.model.Knn;
 //import ai.skymind.cdg.api.model.Inference;
@@ -38,8 +47,8 @@ https://github.com/deeplearning4j/DataVec/blob/2995fc72b9148e9510fee77e3e1fc7f76
 public class MNISTModelServerInferenceExample {
 
 
-//    @Parameter(names="--transform", description="Endpoint for Transform", required=true)
-//    private String transformedArrayEndpoint;
+    @Parameter(names="--transform", description="Endpoint for Transform", required=true)
+    private String transformedArrayEndpoint;
 
 /*
     @Parameter(names="--inference", description="Endpoint for Inference", required=true)
@@ -47,10 +56,10 @@ public class MNISTModelServerInferenceExample {
 
     @Parameter(names="--type", description="Type of endpoint (multi or single)", required=true)
     private InferenceType inferenceType;
-
+*/
     @Parameter(names="--input", description="CSV input file", required=true)
     private String inputFile;
-*/
+
 
 
 /*
@@ -59,12 +68,31 @@ public class MNISTModelServerInferenceExample {
 
     @Parameter(names="--knn", description="Number of K Nearest Neighbors to return", required=false)
     private int knnN = 20;
-
+*/
     @Parameter(names="--418", description="Temp Fix for DataVec#418", required=false)
     private boolean fix418;
-*/
+
     public void run() throws Exception {
-        /*
+
+            final HttpHeaders requestHeaders = new HttpHeaders();
+             final Object transformRequest;
+
+
+        SingleImageRecord record =
+                        new SingleImageRecord(new ClassPathResource("mnist_28x28/0/71.png").getFile().toURI());
+
+
+/*
+        JsonNode jsonNode = Unirest.post("http://localhost:9060/")
+                        .header("accept", "application/json").header("Content-Type", "application/json").body(record)
+                        .asJson().getBody();
+*/
+//        Base64NDArrayBody array = Unirest.post("http://localhost:9060/transformincrementalarray")
+  //                      .header("accept", "application/json").header("Content-Type", "application/json").body(record)
+    //                    .asObject(Base64NDArrayBody.class).getBody();
+
+
+        
         final File file = new File(inputFile);
 
         if (!file.exists() || !file.isFile()) {
@@ -78,28 +106,11 @@ public class MNISTModelServerInferenceExample {
         // Initialize RestTemplate
         RestTemplate restTemplate = new RestTemplate();
 
-        // Read each line
-        String line = null;
-        while ((line = br.readLine()) != null) {
-            String[] fields = line.split(",");
+        //    final HttpHeaders requestHeaders = new HttpHeaders();
+          //  final Object transformRequest;
 
-            // Maybe strip quotes
-            for (int i=0; i<fields.length; i++) {
-                final String field = fields[i];
-                if (field.matches("^\".*\"$")) {
-                    fields[i] = field.substring(1, field.length()-1);
-                }
-            }
 
-            final HttpHeaders requestHeaders = new HttpHeaders();
-            final Object transformRequest;
-
-            if (isSequential == true) {
-                requestHeaders.add("Sequence", "true");
-                transformRequest = new TransformedArray.BatchedRequest(fields);
-            } else {
-                transformRequest = new TransformedArray.Request(fields);
-            }
+            transformRequest = new TransformedImage.Request("url here");
 
             if (fix418) {
                 // Accept JSON
@@ -111,38 +122,37 @@ public class MNISTModelServerInferenceExample {
                 restTemplate.setMessageConverters(converters);
             }
 
+
             final HttpEntity<Object> httpEntity =
                     new HttpEntity<Object>(transformRequest, requestHeaders);
 
-            final TransformedArray.Response arrayResponse = restTemplate.postForObject(
+
+            final TransformedImage.Response arrayResponse = restTemplate.postForObject(
                     transformedArrayEndpoint,
                     httpEntity,
-                    TransformedArray.Response.class);
-
+                    TransformedImage.Response.class);
+                    
+/*
             Class clazz;
             Object request;
-
             if (inferenceType == InferenceType.Single || inferenceType == InferenceType.Multi) {
                 clazz = (inferenceType == InferenceType.Single) ?
                         Inference.Response.Classify.class : Inference.Response.MultiClassify.class;
-
                 request = new Inference.Request(arrayResponse.getNdArray());
-
              } else {
                  clazz = Knn.Response.class;
                  request = new Knn.Request(knnN, arrayResponse.getNdArray());
              }
 
+
              final Object response = restTemplate.postForObject(
                          inferenceEndpoint,
                          request,
                          clazz);
-
              System.out.format("Inference response: %s\n", response.toString());
-        }
+*/
 
-        br.close();
-        */
+        
     }
 
     public static void main(String[] args) throws Exception {

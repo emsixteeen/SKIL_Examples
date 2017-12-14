@@ -9,7 +9,7 @@ import org.datavec.spark.transform.model.SingleImageRecord;
 
 //import ai.skymind.cdg.api.model.Knn;
 //import ai.skymind.cdg.api.model.Inference;
-//import ai.skymind.cdg.api.model.TransformedArray;
+import ai.skymind.skil.examples.mnist.modelserver.inference.mode.TransformedImage;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -94,12 +94,7 @@ public class MNISTModelServerInferenceExample {
             final HttpHeaders requestHeaders = new HttpHeaders();
             final Object transformRequest;
 
-            if (isSequential == true) {
-                requestHeaders.add("Sequence", "true");
-                transformRequest = new TransformedArray.BatchedRequest(fields);
-            } else {
-                transformRequest = new TransformedArray.Request(fields);
-            }
+            transformRequest = new TransformedImage.Request(fields);
 
             if (fix418) {
                 // Accept JSON
@@ -114,10 +109,10 @@ public class MNISTModelServerInferenceExample {
             final HttpEntity<Object> httpEntity =
                     new HttpEntity<Object>(transformRequest, requestHeaders);
 
-            final TransformedArray.Response arrayResponse = restTemplate.postForObject(
+            final TransformedImage.Response arrayResponse = restTemplate.postForObject(
                     transformedArrayEndpoint,
                     httpEntity,
-                    TransformedArray.Response.class);
+                    TransformedImage.Response.class);
 
             Class clazz;
             Object request;

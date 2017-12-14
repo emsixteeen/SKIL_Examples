@@ -67,25 +67,25 @@
             <artifactId>nd4j-api</artifactId>
             <version>${nd4j.version}</version>
         </dependency>
-
+<!--
         <dependency>
             <groupId>org.nd4j</groupId>
             <artifactId>nd4j-kryo_${scala.binary.version}</artifactId>
             <version>${nd4j.version}</version>
         </dependency>
-
+-->
         <dependency>
             <groupId>org.datavec</groupId>
             <artifactId>datavec-api</artifactId>
             <version>${datavec.version}</version>
         </dependency>
-
+<!--
         <dependency>
             <groupId>org.datavec</groupId>
             <artifactId>datavec-spark_${scala.binary.version}</artifactId>
             <version>${dl4j.spark.version}</version>
         </dependency>
-
+-->
         <dependency>
             <groupId>org.datavec</groupId>
             <artifactId>datavec-spark-inference-model</artifactId>
@@ -179,12 +179,13 @@
             <version>3.6.1</version>
         </dependency>
 
+<!--
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
             <version>2.7.3</version>
         </dependency>
-
+-->
 
     </dependencies>
 
@@ -209,7 +210,7 @@
 
 
 
-
+<!--
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -225,14 +226,15 @@
                             <sources>
                                 <source>src/main/scala</source>
                                 <source>src/main/java</source>
-                                <!--<source>src/main/views</source>-->
                             </sources>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+        -->
 
-            <plugin>
+
+<!--            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>${exec-maven-plugin.version}</version>
@@ -245,12 +247,10 @@
                 </executions>
                 <configuration>
                     <mainClass>ai.skymind.cdg.etl.transform.AiresDataTransformProcess</mainClass>
-                    <!--<arguments>-->
-                        <!--<argument>foo</argument>-->
-                        <!--<argument>bar</argument>-->
-                    <!--</arguments>-->
                 </configuration>
             </plugin>
+
+        -->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

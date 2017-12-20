@@ -23,6 +23,11 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
 
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import org.json.JSONObject;
+
+
 import java.io.IOException;
 
 /*
@@ -50,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import ai.skymind.skil.examples.mnist.modelserver.auth.Authorization;
 
 /*
 based on
@@ -62,11 +68,11 @@ public class MNISTModelServerInferenceExample {
 
 
 //    @Parameter(names="--transform", description="Endpoint for Transform", required=true)
-    private String transformedArrayEndpoint = "";
+    private String skilInferenceEndpoint = "http://localhost:9008/endpoints/jp_tf_deployment/model/mnistjp5epoch/default/";
 
 
 //    @Parameter(names="--inference", description="Endpoint for Inference", required=true)
-    private String inferenceEndpoint = "";
+//    private String inferenceEndpoint = "";
 /*
     @Parameter(names="--type", description="Type of endpoint (multi or single)", required=true)
     private InferenceType inferenceType;
@@ -83,8 +89,8 @@ public class MNISTModelServerInferenceExample {
     @Parameter(names="--knn", description="Number of K Nearest Neighbors to return", required=false)
     private int knnN = 20;
 */
-    @Parameter(names="--418", description="Temp Fix for DataVec#418", required=false)
-    private boolean fix418;
+//    @Parameter(names="--418", description="Temp Fix for DataVec#418", required=false)
+  //  private boolean fix418;
 
 
     //private ImageSparkTransformServer server = new ImageSparkTransformServer();
@@ -139,8 +145,8 @@ public class MNISTModelServerInferenceExample {
 
         //Base64NDArrayBody base64returnBytes = imgTransformProcess.toArray( record );
         // https://github.com/deeplearning4j/DataVec/blob/master/datavec-data/datavec-data-image/src/main/java/org/datavec/image/transform/ImageTransformProcess.java#L99
-                        ImageWritable img = imgTransformProcess.transformFileUriToInput( imageFile.toURI() );
-
+        
+        ImageWritable img = imgTransformProcess.transformFileUriToInput( imageFile.toURI() );
 
         INDArray finalRecord = imgTransformProcess.executeArray( img );
 
@@ -150,6 +156,76 @@ public class MNISTModelServerInferenceExample {
 
 
         System.out.println( "Finished image conversion" );
+
+                // Initialize RestTemplate
+        //RestTemplate restTemplate = new RestTemplate();
+
+        skilClientGetImageInference( imgBase64 );
+
+
+
+    }
+
+    private void skilClientGetImageInference( Base64NDArrayBody imgBase64 ) {
+
+            Authorization auth = new Authorization();
+            String auth_token = auth.getAuthToken( "admin", "admin" );
+
+            System.out.println( "auth token: " + auth_token );
+
+        try {
+
+            String returnVal =
+                    Unirest.post( skilInferenceEndpoint + "classify" ) //MessageFormat.format("http://{0}:{1}/login", "localhost", "9008"))
+                            .header("accept", "application/json")
+                            .header("Content-Type", "application/json")
+                            .header( "Authorization", "Bearer " + auth_token)
+                            .body(new JSONObject() //Using this because the field functions couldn't get translated to an acceptable json
+                                    .put( "id", "some_id" )
+                                    .put("ndarray", imgBase64.getNdarray() )
+                                    
+                                    .toString())
+                            .asJson()
+                            .getBody().getObject().toString(); //.getString("token");
+
+
+            System.out.println( "classification return: " + returnVal );
+
+        } catch (UnirestException e) {
+            e.printStackTrace();
+        }
+
+/*
+            RestTemplate restTemplate = new RestTemplate();
+
+            final HttpHeaders requestHeaders = new HttpHeaders();
+            final Object inferenceRequest = new Inference.Request( imgBase64.toString() );
+
+
+            final HttpEntity<Object> httpEntity =
+                    new HttpEntity<Object>(inferenceRequest, requestHeaders);
+
+                // Accept JSON
+                requestHeaders.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+
+                // Temp fix
+                List<HttpMessageConverter<?>> converters = restTemplate.getMessageConverters();
+                converters.add(new ExtendedMappingJackson2HttpMessageConverter());
+                restTemplate.setMessageConverters(converters);
+
+
+
+            Class clazz = Inference.Response.Classify.class; // : Inference.Response.MultiClassify.class;
+
+            //Object request = new Inference.Request( imgBase64.toString() );
+
+             final Object response = restTemplate.postForObject(
+                         skilInferenceEndpoint + "classify",
+                         inferenceRequest,
+                         clazz);
+
+             System.out.format("Inference response: %s\n", response.toString());
+*/
 
 
     }

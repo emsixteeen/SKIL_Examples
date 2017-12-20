@@ -1,23 +1,37 @@
 package ai.skymind.skil.examples.mnist.modelserver.inference;
 
+import org.datavec.image.data.ImageWritable;
+
 import org.datavec.api.util.ClassPathResource;
 import org.datavec.image.transform.ImageTransformProcess;
 import org.datavec.spark.transform.model.Base64NDArrayBody;
 import org.datavec.spark.transform.model.BatchImageRecord;
 import org.datavec.spark.transform.model.SingleImageRecord;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.serde.base64.Nd4jBase64;
+
+//import org.datavec.spark.transform.model.*;
+
+//import org.datavec.image.transform.ImageTransformProcess;
+
 import ai.skymind.skil.examples.mnist.modelserver.inference.model.TransformedImage;
 
-/*
+
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
+
+import java.io.IOException;
+
+/*
 import org.apache.commons.io.FileUtils;
 import org.datavec.api.util.ClassPathResource;
 */
 
 //import ai.skymind.cdg.api.model.Knn;
-//import ai.skymind.cdg.api.model.Inference;
+import ai.skymind.skil.examples.mnist.modelserver.inference.model.Inference;
 //import ai.skymind.cdg.api.model.TransformedArray;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -47,18 +61,18 @@ https://github.com/deeplearning4j/DataVec/blob/2995fc72b9148e9510fee77e3e1fc7f76
 public class MNISTModelServerInferenceExample {
 
 
-    @Parameter(names="--transform", description="Endpoint for Transform", required=true)
-    private String transformedArrayEndpoint;
+//    @Parameter(names="--transform", description="Endpoint for Transform", required=true)
+    private String transformedArrayEndpoint = "";
 
+
+//    @Parameter(names="--inference", description="Endpoint for Inference", required=true)
+    private String inferenceEndpoint = "";
 /*
-    @Parameter(names="--inference", description="Endpoint for Inference", required=true)
-    private String inferenceEndpoint;
-
     @Parameter(names="--type", description="Type of endpoint (multi or single)", required=true)
     private InferenceType inferenceType;
 */
-    @Parameter(names="--input", description="CSV input file", required=true)
-    private String inputFile;
+    @Parameter(names="--input", description="image input file", required=true)
+    private String inputImageFile = "";
 
 
 
@@ -72,91 +86,77 @@ public class MNISTModelServerInferenceExample {
     @Parameter(names="--418", description="Temp Fix for DataVec#418", required=false)
     private boolean fix418;
 
-    public void run() throws Exception {
 
-            final HttpHeaders requestHeaders = new HttpHeaders();
-             final Object transformRequest;
+    //private ImageSparkTransformServer server = new ImageSparkTransformServer();
 
 
-        SingleImageRecord record =
-                        new SingleImageRecord(new ClassPathResource("mnist_28x28/0/71.png").getFile().toURI());
 
-
+    public void run() throws Exception, IOException {
 /*
-        JsonNode jsonNode = Unirest.post("http://localhost:9060/")
-                        .header("accept", "application/json").header("Content-Type", "application/json").body(record)
-                        .asJson().getBody();
-*/
-//        Base64NDArrayBody array = Unirest.post("http://localhost:9060/transformincrementalarray")
-  //                      .header("accept", "application/json").header("Content-Type", "application/json").body(record)
-    //                    .asObject(Base64NDArrayBody.class).getBody();
 
+        Unirest.setObjectMapper(new ObjectMapper() {
+            private org.nd4j.shade.jackson.databind.ObjectMapper jacksonObjectMapper =
+                            new org.nd4j.shade.jackson.databind.ObjectMapper();
 
-        
-        final File file = new File(inputFile);
-
-        if (!file.exists() || !file.isFile()) {
-            System.err.format("unable to access file %s\n", inputFile);
-            System.exit(2);
-        }
-
-        // Open file
-        BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-
-        // Initialize RestTemplate
-        RestTemplate restTemplate = new RestTemplate();
-
-        //    final HttpHeaders requestHeaders = new HttpHeaders();
-          //  final Object transformRequest;
-
-
-            transformRequest = new TransformedImage.Request("url here");
-
-            if (fix418) {
-                // Accept JSON
-                requestHeaders.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-
-                // Temp fix
-                List<HttpMessageConverter<?>> converters = restTemplate.getMessageConverters();
-                converters.add(new ExtendedMappingJackson2HttpMessageConverter());
-                restTemplate.setMessageConverters(converters);
+            public <T> T readValue(String value, Class<T> valueType) {
+                try {
+                    return jacksonObjectMapper.readValue(value, valueType);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
 
-
-            final HttpEntity<Object> httpEntity =
-                    new HttpEntity<Object>(transformRequest, requestHeaders);
-
-
-            final TransformedImage.Response arrayResponse = restTemplate.postForObject(
-                    transformedArrayEndpoint,
-                    httpEntity,
-                    TransformedImage.Response.class);
-                    
-/*
-            Class clazz;
-            Object request;
-            if (inferenceType == InferenceType.Single || inferenceType == InferenceType.Multi) {
-                clazz = (inferenceType == InferenceType.Single) ?
-                        Inference.Response.Classify.class : Inference.Response.MultiClassify.class;
-                request = new Inference.Request(arrayResponse.getNdArray());
-             } else {
-                 clazz = Knn.Response.class;
-                 request = new Knn.Request(knnN, arrayResponse.getNdArray());
-             }
+            public String writeValue(Object value) {
+                try {
+                    return jacksonObjectMapper.writeValueAsString(value);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        */
 
 
-             final Object response = restTemplate.postForObject(
-                         inferenceEndpoint,
-                         request,
-                         clazz);
-             System.out.format("Inference response: %s\n", response.toString());
-*/
+        ImageTransformProcess imgTransformProcess = new ImageTransformProcess.Builder().seed(12345)
+                        .scaleImageTransform(10).cropImageTransform(5).build();
+
 
         
+        final File imageFile = new File( inputImageFile );
+
+        if (!imageFile.exists() || !imageFile.isFile()) {
+            System.err.format("unable to access file %s\n", inputImageFile);
+            System.exit(2);
+        } else {
+
+
+            System.out.println( "Inference for: " + inputImageFile );
+
+        }
+
+        //SingleImageRecord record =
+          //              new SingleImageRecord( imageFile.toURI() );
+
+        //Base64NDArrayBody base64returnBytes = imgTransformProcess.toArray( record );
+        // https://github.com/deeplearning4j/DataVec/blob/master/datavec-data/datavec-data-image/src/main/java/org/datavec/image/transform/ImageTransformProcess.java#L99
+                        ImageWritable img = imgTransformProcess.transformFileUriToInput( imageFile.toURI() );
+
+
+        INDArray finalRecord = imgTransformProcess.executeArray( img );
+
+        Base64NDArrayBody imgBase64 = new Base64NDArrayBody(Nd4jBase64.base64String( finalRecord ) );
+
+        System.out.println( imgBase64 );  
+
+
+        System.out.println( "Finished image conversion" );
+
+
     }
 
     public static void main(String[] args) throws Exception {
         MNISTModelServerInferenceExample m = new MNISTModelServerInferenceExample();
+
         JCommander.newBuilder()
           .addObject(m)
           .build()
